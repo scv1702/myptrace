@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <limits.h>
 #include <sys/wait.h>
 #include <sys/user.h>
 #include <sys/ptrace.h>
@@ -356,9 +357,6 @@ char *syscall_table[SYSCALL_TABLE_SIZE] = {
     "pkey_mprotect"
 };
 
-// stores the nums of called syscalls and sorted by the number of calls
-int called_syscall[SYSCALL_TABLE_SIZE] = { 0, };
-
 int count = 0;
 
 int main(int ac, char *av[]) {
@@ -404,15 +402,14 @@ int main(int ac, char *av[]) {
     return 0;
 }
 
+// print syscall trace log sorted by the number of calls
 void syscall_trace_log() {
     int max;
     int idx_of_max;
-    int i, j;
+    int i;
 
-    // index of called_syscall
-    j = 0;
+    printf("Total number of syscalls: %d\n", count);
 
-    // called_syscall must be sorted by the number of calls
     while (1) {
         max = -1;
         idx_of_max = -1;
@@ -426,13 +423,8 @@ void syscall_trace_log() {
         if (max <= 0) {
             break;
         }
-        // founded max value is multiplied by -1 to find another max at next iter
-        syscall_cnt[idx_of_max] = -syscall_cnt[idx_of_max];
-        called_syscall[j++] = idx_of_max; 
-    }
- 
-    printf("Total number of syscalls: %d\n", count);
-    for (i = 0; i < j; i++) {
-        printf("%5d %s\n", -syscall_cnt[called_syscall[i]], syscall_table[called_syscall[i]]);
+        printf("%5d %s\n", syscall_cnt[idx_of_max], syscall_table[idx_of_max]);
+        // founded max value is assigned to -INF to find another max at next iter
+        syscall_cnt[idx_of_max] = INT_MIN;
     }
 }
